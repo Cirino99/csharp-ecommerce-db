@@ -60,7 +60,15 @@ void NewCustomer()
 
 void ManagementEmployee()
 {
-    
+    Console.WriteLine("Inserisci il tuo nome");
+    string name = Console.ReadLine();
+    Employee employee = db.Employees.Where(e => e.Name == name).FirstOrDefault<Employee>();
+    if (employee == null)
+    {
+        Console.WriteLine("Dipendente non trovato");
+        return;
+    }
+    NewOrder(employee);
 }
 
 void NewEmployee()
@@ -97,4 +105,32 @@ void StartProduct()
     db.Products.Add(product9);
     db.Products.Add(product10);
     db.SaveChanges();
+}
+
+void NewOrder(Employee employee)
+{
+    List<Product> products = db.Products.ToList<Product>();
+    Order order = new Order();
+    order.Employee = employee;
+    order.Products = new List<Product>();
+    order.Amount = 0;
+    order.Status = true;
+    bool succes = false;
+    foreach(Product product in products)
+    {
+        Console.WriteLine("Nome: {0}, prezzo: {1}",product.Name,product.Price);
+        Console.WriteLine("Vuoi aggiungere questo prodotto all'ordine?");
+        string addProduct = Console.ReadLine();
+        if (addProduct == "si")
+        {
+            order.Products.Add(product);
+            order.Amount += product.Price;
+            succes = true;
+        }
+    }
+    if (succes)
+    {
+        db.Orders.Add(order);
+        db.SaveChanges();
+    }
 }

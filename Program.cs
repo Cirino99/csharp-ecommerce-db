@@ -25,7 +25,7 @@ else
 
 void ManagementCustomer()
 {
-    List<Order> ordes = db.Orders.ToList<Order>();
+    List<Order> ordes = db.Orders.Where(o => o.Status == true).ToList<Order>();
     if (ordes.Count == 0)
     {
         Console.WriteLine("Non ci sono ordini da comprare");
@@ -43,6 +43,10 @@ void ManagementCustomer()
     {
         Console.WriteLine("Ordine numero: {0}, Prezzo: {1}", order.Id, order.Amount);
     }
+    Console.WriteLine("Digita il numero dell'ordine che voui comprare");
+    int idOrder = Convert.ToInt32(Console.ReadLine());
+    Order myOrder = ordes.Where(c => c.Id == idOrder).First<Order>();
+    NewPayment(customer,myOrder);
 }
 
 void NewCustomer()
@@ -133,4 +137,17 @@ void NewOrder(Employee employee)
         db.Orders.Add(order);
         db.SaveChanges();
     }
+}
+
+void NewPayment(Customer customer, Order order)
+{
+    Payment payment = new Payment();
+    payment.Amount = order.Amount;
+    payment.Order = order;
+    payment.Status = true;
+    order.Customer = customer;
+    order.Status = false;
+    db.Payments.Add(payment);
+    db.SaveChanges();
+    Console.WriteLine("Ordine acquistato con successo!");
 }

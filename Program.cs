@@ -31,7 +31,7 @@ do
 
 void ManagementCustomer()
 {
-    List<Order> ordes = db.Orders.Where(o => o.Status == true).ToList<Order>();
+    List<Order> ordes = db.Orders.Where(o => o.Status == "Disponibile").ToList<Order>();
     if (ordes.Count == 0)
     {
         Console.WriteLine("Non ci sono ordini da comprare");
@@ -82,6 +82,7 @@ void ManagementEmployee()
     Console.WriteLine("1) Creare un nuovo ordine");
     Console.WriteLine("2) Modificare un ordine");
     Console.WriteLine("3) Eliminare un ordine");
+    Console.WriteLine("4) Spedisci ordini comprati");
     string scelta = Console.ReadLine();
     switch (scelta)
     {
@@ -97,6 +98,9 @@ void ManagementEmployee()
             Order order3 = SearchOrder();
             if (order3 != null)
                 DeleteOrder(order3);
+            break;
+        case "4":
+            SendOrder(employee);
             break;
         default:
             break;
@@ -146,7 +150,7 @@ void NewOrder(Employee employee)
     order.Employee = employee;
     order.Products = new List<Product>();
     order.Amount = 0;
-    order.Status = true;
+    order.Status = "Disponibile";
     bool succes = false;
     foreach(Product product in products)
     {
@@ -169,14 +173,23 @@ void NewOrder(Employee employee)
 
 void NewPayment(Customer customer, Order order)
 {
-    Payment payment = new Payment();
-    payment.Amount = order.Amount;
-    payment.Order = order;
-    payment.Status = true;
-    order.Customer = customer;
-    order.Status = false;
-    db.Payments.Add(payment);
-    db.SaveChanges();
+    int succes;
+    do
+    {
+        Random rand = new Random();
+        succes = rand.Next(2);
+        Payment payment = new Payment();
+        payment.Amount = order.Amount;
+        payment.Order = order;
+        if(succes == 1)
+            payment.Status = true;
+        else
+            payment.Status = false;
+        order.Customer = customer;
+        order.Status = "Comprato";
+        db.Payments.Add(payment);
+        db.SaveChanges();
+    } while (succes == 0);
     Console.WriteLine("Ordine acquistato con successo!");
 }
 
@@ -230,7 +243,7 @@ void DeleteOrder(Order order)
 
 Order SearchOrder()
 {
-    List<Order> ordes = db.Orders.Where(o => o.Status == true).ToList<Order>();
+    List<Order> ordes = db.Orders.Where(o => o.Status == "Disponibile").ToList<Order>();
     if (ordes.Count == 0)
     {
         Console.WriteLine("Non ci sono ordini presenti");
@@ -244,4 +257,25 @@ Order SearchOrder()
     int idOrder = Convert.ToInt32(Console.ReadLine());
     Order myOrder = ordes.Where(c => c.Id == idOrder).First<Order>();
     return myOrder;
+}
+
+void SendOrder(Employee employee)
+{
+    List<Order> ordes = db.Orders.Where(o => o.Status == "Comprato").ToList<Order>();
+    if (ordes.Count == 0)
+    {
+        Console.WriteLine("Non ci sono ordini da spedire");
+        return;
+    }
+    foreach (Order order in ordes)
+    {
+        Console.WriteLine("Ordine numero: {0}, Prezzo: {1}", order.Id, order.Amount);
+        Console.WriteLine("Vuoi spedire questo ordine?");
+        string send = Console.ReadLine();
+        if (send == "si")
+        {
+            order.Status = "Spedito";
+        }
+    }
+    db.SaveChanges();
 }

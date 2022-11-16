@@ -4,24 +4,30 @@ EcommerceContext db = new EcommerceContext();
 List<Product> products = db.Products.ToList<Product>();
 if (products.Count == 0)
     StartProduct();
-Console.WriteLine("Benvenuto, sei un cliente o un dipendente?");
-string tipo = Console.ReadLine();
-if (tipo == "cliente")
+bool exit = false;
+do
 {
-    Console.WriteLine("Sei un nuovo cliente?");
-    string newCustomer = Console.ReadLine();
-    if (newCustomer == "si")
-        NewCustomer();
-    ManagementCustomer();
-}
-else
-{
-    Console.WriteLine("Sei un nuovo dipendete?");
-    string newEmployee = Console.ReadLine();
-    if (newEmployee == "si")
-        NewEmployee();
-    ManagementEmployee();
-}
+    Console.WriteLine("Benvenuto, sei un cliente o un dipendente?");
+    string tipo = Console.ReadLine();
+    if (tipo == "cliente")
+    {
+        Console.WriteLine("Sei un nuovo cliente?");
+        string newCustomer = Console.ReadLine();
+        if (newCustomer == "si")
+            NewCustomer();
+        ManagementCustomer();
+    }
+    else if (tipo != "exit")
+    {
+        Console.WriteLine("Sei un nuovo dipendete?");
+        string newEmployee = Console.ReadLine();
+        if (newEmployee == "si")
+            NewEmployee();
+        ManagementEmployee();
+    }
+    else
+        exit = true;
+} while (!exit);
 
 void ManagementCustomer()
 {
@@ -72,7 +78,29 @@ void ManagementEmployee()
         Console.WriteLine("Dipendente non trovato");
         return;
     }
-    NewOrder(employee);
+    Console.WriteLine("Scegli cosa fare:");
+    Console.WriteLine("1) Creare un nuovo ordine");
+    Console.WriteLine("2) Modificare un ordine");
+    Console.WriteLine("3) Eliminare un ordine");
+    string scelta = Console.ReadLine();
+    switch (scelta)
+    {
+        case "1":
+            NewOrder(employee);
+            break;
+        case "2":
+            Order order2 = SearchOrder();
+            if(order2 != null)
+                EditOrder(employee, order2);
+            break;
+        case "3":
+            Order order3 = SearchOrder();
+            if (order3 != null)
+                DeleteOrder(order3);
+            break;
+        default:
+            break;
+    }
 }
 
 void NewEmployee()
@@ -150,4 +178,70 @@ void NewPayment(Customer customer, Order order)
     db.Payments.Add(payment);
     db.SaveChanges();
     Console.WriteLine("Ordine acquistato con successo!");
+}
+
+void EditOrder(Employee employee, Order order)
+{
+    order.Employee = employee;
+    Console.WriteLine("L'ordine ha {0} prodotti al suo interno",order.Products.Count);
+    Console.WriteLine("Vuoi aggiungere un prodotto o eliminare un prodotto dall'ordine?(add/remove)");
+    string addRemove = Console.ReadLine();
+    if (addRemove == "remove")
+    {
+        foreach (Product product in order.Products)
+        {
+            Console.WriteLine("Nome: {0}, prezzo: {1}", product.Name, product.Price);
+            Console.WriteLine("Vuoi rimuovere questo prodotto all'ordine?");
+            string addProduct = Console.ReadLine();
+            if (addProduct == "si")
+            {
+                order.Products.Remove(product);
+                order.Amount -= product.Price;
+            }
+        }
+        if (order.Products.Count == 0)
+            DeleteOrder(order);
+    } else
+    {
+        List<Product> products = db.Products.ToList<Product>();
+        foreach (Product product in products)
+        {
+            if (!order.Products.Contains(product))
+            {
+                Console.WriteLine("Nome: {0}, prezzo: {1}", product.Name, product.Price);
+                Console.WriteLine("Vuoi aggiungere questo prodotto all'ordine?");
+                string addProduct = Console.ReadLine();
+                if (addProduct == "si")
+                {
+                    order.Products.Add(product);
+                    order.Amount += product.Price;
+                }
+            }
+        }
+    }
+    db.SaveChanges();
+}
+
+void DeleteOrder(Order order)
+{
+    db.Orders.Remove(order);
+    db.SaveChanges();
+}
+
+Order SearchOrder()
+{
+    List<Order> ordes = db.Orders.Where(o => o.Status == true).ToList<Order>();
+    if (ordes.Count == 0)
+    {
+        Console.WriteLine("Non ci sono ordini presenti");
+        return null;
+    }
+    foreach (Order order in ordes)
+    {
+        Console.WriteLine("Ordine numero: {0}, Prezzo: {1}", order.Id, order.Amount);
+    }
+    Console.WriteLine("Digita il numero dell'ordine che voui selezionare");
+    int idOrder = Convert.ToInt32(Console.ReadLine());
+    Order myOrder = ordes.Where(c => c.Id == idOrder).First<Order>();
+    return myOrder;
 }

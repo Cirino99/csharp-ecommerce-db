@@ -1,5 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using Microsoft.EntityFrameworkCore;
+
 EcommerceContext db = new EcommerceContext();
 List<Product> products = db.Products.ToList<Product>();
 if (products.Count == 0)
@@ -243,7 +245,7 @@ void DeleteOrder(Order order)
 
 Order SearchOrder()
 {
-    List<Order> ordes = db.Orders.Where(o => o.Status == "Disponibile").ToList<Order>();
+    List<Order> ordes = db.Orders.Include(o => o.Products).Where(o => o.Status == "Disponibile").ToList<Order>();
     if (ordes.Count == 0)
     {
         Console.WriteLine("Non ci sono ordini presenti");
@@ -252,6 +254,11 @@ Order SearchOrder()
     foreach (Order order in ordes)
     {
         Console.WriteLine("Ordine numero: {0}, Prezzo: {1}", order.Id, order.Amount);
+        Console.WriteLine("Contiene i seguenti prodotti:");
+        foreach (Product product in order.Products)
+        {
+            Console.WriteLine("\t Prodotto numero: {0}, Prezzo: {1}", product.Id, product.Price);
+        }
     }
     Console.WriteLine("Digita il numero dell'ordine che voui selezionare");
     int idOrder = Convert.ToInt32(Console.ReadLine());
